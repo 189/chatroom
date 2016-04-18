@@ -203,7 +203,7 @@ var io = require('socket.io')(server);
 	})
 
 
-#编写静态聊天室页面
+##编写静态聊天室页面
 静态页面的逻辑比较简单，主要逻辑包括  
 1、验证和设置用户昵称，设置成功则存入 cookie 下次直接使用 cookie 中的昵称；  
 2、客户端推送信息给服务端，同时监听服务端推送来的聊天消息；  
@@ -371,7 +371,7 @@ var io = require('socket.io')(server);
 	</script>
 	</body>
 	</html> 
-#如何使用
+##如何使用
 	$ cd chatroom
 	$ npm install
 	$ node app.js
