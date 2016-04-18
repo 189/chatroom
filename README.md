@@ -1,7 +1,3 @@
-#如何使用
-	$ cd chatroom
-	$ npm install
-	$ node app.js
 Node一个经典的应用场景之一便是实时聊天程序，得益于HTML5定义的 websocket协议，服务器和客户端可以建立双向连接通道，以事件的方式，实现双向通信，客户端可以主动提交消息给服务端，服务端也可以主动推送消息给客户端。然而并不是每个浏览器都支持 websocket 协议，这便诞生了 Socket.io。
 
 Socket.IO是一个开源的WebSocket库，它基于Node.js环境实现WebSocket服务端，同时也提供客户端JS库，可以工作在任何平台，如浏览器、手持设备等。
@@ -375,3 +371,9 @@ var io = require('socket.io')(server);
 	</script>
 	</body>
 	</html> 
+#如何使用
+	$ cd chatroom
+	$ npm install
+	$ node app.js
+	
+	
