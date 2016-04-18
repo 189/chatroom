@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+<style>
+	html,body,div,section,form,button,input,ul,li,p,textarea { margin: 0; padding: 0; outline: none; }
+	body { font-size: 12px;  } 
+	li { list-style: none;  }
+	p { line-height: 1.5;  }
+	textarea,button { border: none; }
+	form { margin: 10px 0 10px;  }
+	.layout { overflow: hidden; padding: 10px; }
+	.message-box,
+	.user-box { border: 1px solid #ccc; height: 300px; overflow: auto; float: left;  }
+	.message-box { width: 300px; }
+	.user-box .tit,
+	.user-box p { padding-left: 10px; }
+	.message-list { height: 85%; border-bottom: 1px solid #ccc; padding: 5px;  }
+	.user-box { width: 150px; }
+	.msg { height: 15%; width: 80%; border-right: 1px solid #ccc; padding: 5px; }
+	.send-btn { width: 18%; height: 15%; -webkit-appearance : none; background: none; }
+	.none { display: none;  }
+	.i-b { display: inline-block; vertical-align: middle;  }
+	.mb-10 { margin-bottom: 10px;  } 
+	.border-box { -webkit-box-sizing : border-box; -moz-box-sizing : border-box; -ms-box-sizing : border-box; box-sizing : border-box;}
+	.tit { height: 25px; line-height: 25px; border-bottom: 1px solid #ccc; }
+	.t-r { text-align: right;  }  
+</style>
+</head>
+<body>
+<div class="layout">
+	<span id="nickname-txt" class="none mb-10"></span>
+	<form  id="nickname-form">
+		<input type="text" name="nickname" placeholder="请填写昵称" />
+		<input type="submit" value="提交昵称">
+		<span class="tip none"></span>
+	</form>
+	<div class="message-box border-box">
+		<div class="message-list border-box"></div>
+		<textarea name="msg" class="msg i-b border-box" placeholder="说点啥呗"></textarea>
+		<button class="send-btn i-b">发送</button>
+	</div>
+	<div class="user-box border-box"></div>
+</div>
+<!-- <script src="http://cdn.staticfile.org/jquery/2.0.0/jquery.min.js"></script> -->
+<script src="/js/socket.io.js"></script>
+<script src="/js/cookie.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+	var socket = io.connect('127.0.0.1:3000');
+	var form = document.querySelector('#nickname-form'),
+		nicknameInput = document.querySelector('input[name=nickname]'),
+		userBox = document.querySelector('.user-box'),
+		msgBox = document.querySelector('.message-list'),
+		tip = document.querySelector('.tip');
+
+	var msg = document.querySelector('.msg');
+
+	// 标记当前 nickname 是否验证通过
+	var nicknameOk = false;
+	var name = Cookie.get('nickname');
+
+	// 尝试从 cookie 读取昵称 若不存在，则用户填写昵称
+	if(!name){
+		// 填写昵称
+		form.addEventListener('submit', function(e){
+			var v = nicknameInput.value.trim();
+			e = e || event;
+			e.preventDefault();
+
+			if(!v){
+				alert('请输入昵称');
+				return;
+			}
+
+			// 推送当前昵称给服务器校验
+			socket.emit('nickname', v, function(data){
+				// 校验成功
+				if(data && data.msg === 'ok'){
+					showNickname(v);
+					Cookie.set('nickname', v, 3);
+					return;
+				}
+				// 校验失败
+				tip.style.display = 'inline-block';
+				tip.innerHTML = data.msg;
+			});
+
+		}, false);
+	}
+	// 若存在 昵称直接从 cookie 中读取 同时推送昵称给服务器
+	else {
+		showNickname(name);
+		socket.emit('nickname', name);
+	}
+
+	// 发送信息
+	document.querySelector('.send-btn').addEventListener('click', function(e){
+		e = e || event;
+		e.preventDefault();
+		if(!nicknameOk){
+			alert('先填个昵称呗');
+			return;
+		}
+
+		if(!msg.value){
+			alert('啥也不写发毛线呢');
+			return;
+		}
+
+		// 推送消息给服务器
+		socket.emit('message', {
+			nickname : name,
+			msg : msg.value
+		});
+	}, false);
+
+	// 监听服务器推送过来的消息
+	socket.on('message', function(data){
+		var node = document.createElement('p');
+		if(data.nickname === name){
+			node.classList.add('t-r');
+		}
+		node.innerHTML = data.nickname + "说:" + data.msg;
+		prepend(msgBox, node);
+		msg.value = '';
+	})
+
+	// 监听当前 nicknames列表
+	socket.on('nicknames', function(data){
+		console.log('nicknames', data);
+		var html = '<div class="tit">在线成员:<span">（<%=num%>）</span></div>'.replace(/<%\=num%>/, data.length);
+		data.forEach(function(v, i){
+			html += '<p>' + v + '</p>';
+		})
+		userBox.innerHTML = html;
+	})
+
+	function showNickname(nickname){
+		document.querySelector('#nickname-txt').style.display = 'block';
+		document.querySelector('#nickname-txt').innerHTML = '您好,' + nickname;
+		form.parentNode.removeChild(form);
+		tip.innerHTML = '';
+		nicknameOk = true;
+		name = nickname;
+	}
+
+
+	function prepend(parentNode, node){
+		if(parentNode.hasChildNodes()){
+			parentNode.insertBefore(node, parentNode.firstChild);
+		}
+		else {
+			parentNode.appendChild(node);
+		}
+	}
+}, false);
+
+</script>
+</body>
+</html>
